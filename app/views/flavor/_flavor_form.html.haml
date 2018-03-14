@@ -1,5 +1,5 @@
 #main_div
   %flavor-form-component
 :javascript
-  ManageIQ.angular.app.value('flavorId', '#{@id}');
+  ManageIQ.angular.app.value('flavorId', '#{@id || "new"}');
   miq_bootstrap('flavor-form-component')
