@@ -1,2 +1,7 @@
 #main_div
-  = render :partial => 'flavor_form', :locals => {:newRecord => true}
+  %flavor-form-component{'repository-id' => 'new'}
+:javascript
+  miq_bootstrap('flavor-form-component')
+
+
+

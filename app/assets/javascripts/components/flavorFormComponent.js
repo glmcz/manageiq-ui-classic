@@ -4,36 +4,35 @@ ManageIQ.angular.app.component('flavorFormComponent', {
   templateUrl: '/static/flavor/flavor_form.html.haml',
   bindings: {
     'repositoryId': '@',
-  },
-});
-flavorFormController.$inject = ['miqService', 'API'];
+  }
+  });
 
-function flavorFormController(miqService, API ) {
+  flavorFormController.$inject = ['miqService', 'API'];
+
+function flavorFormController(miqService, API) {
   var vm = this;
 
   var init = function() {
+    vm.afterGet = false;
 
-   vm.afterGet = false;
-
-   vm.flavorModel = {
+    vm.flavorModel = {
       name: '',
-      ram: '',
-      vcpus: '',
-      disk: '',
-      swap: '',
-      rxtx_factor: '1.0',
-      is_public: true,
-      ems_id: '',
+      description: '',
+      scm_type: 'git',
+      scm_url: '',
+      authentication_id: null,
+      scm_branch: '',
+      scm_clean: false,
+      scm_delete_on_update: false,
+      scm_update_on_launch: false,
     };
-    
-    vm.model = 'flavorModel';
-    vm.ems_list = [];
 
-    ManageIQ.angular.scope = vm;
+    vm.attributes = ['name', 'description', 'scm_type', 'scm_url', 'authentication_id', 'scm_branch', 'scm_clean', 'scm_delete_on_update', 'scm_update_on_launch'];
+    vm.model = 'flavormodel';
 
     vm.saveable = miqService.saveable;
     vm.newRecord = vm.repositoryId === 'new';
-	
+
     vm.scm_credentials = [{name: __('Select credentials'), value: null}];
     API.get('/api/authentications?collection_class=ManageIQ::Providers::EmbeddedAnsible::AutomationManager::ScmCredential&expand=resources&sort_by=name&sort_order=ascending')
       .then(getCredentials)
@@ -49,64 +48,96 @@ function flavorFormController(miqService, API ) {
         .catch(miqService.handleFailure);
     }
   };
+
   vm.cancelClicked = function() {
     miqService.sparkleOn();
-    var message = __('Add of Flavor cancelled by user.');
-    var url = '/flavor/show_list';
-    miqService.redirectBack(message, 'warn', url);
+    var message = vm.newRecord ? __('Add of Repository cancelled by user.') : sprintf(__('Edit of Repository \"%s\" cancelled by user.'), vm.repositoryModel.name);
+    var url = '/ansible_repository/show_list';
+    miqFlashLater({
+      message: message,
+      level: 'warning',
+    });
+    window.location.href = url;
+  };
+
+  vm.resetClicked = function(angularForm) {
+    vm.repositoryModel = angular.copy( vm.modelCopy );
+    angularForm.$setPristine(true);
+    miqService.miqFlash('warn', __('All changes have been reset'));
+  };
+
+  vm.saveClicked = function() {
+    miqService.sparkleOn();
+    API.put('/api/configuration_script_sources/' + vm.repositoryId, vm.repositoryModel)
+      .then(vm.getBack)
+      .catch(miqService.handleFailure);
   };
 
   vm.addClicked = function() {
     miqService.sparkleOn();
-    API.post('/api/providers/' + vm.flavorModel.ems.id + '/flavors', vm.flavorModel)
-      .then(getBack)
+    API.post('/api/configuration_script_sources/', vm.repositoryModel)
+      .then(vm.getBack)
       .catch(miqService.handleFailure);
   };
 
   function setForm() {
+    vm.modelCopy = angular.copy( vm.repositoryModel );
     vm.afterGet = true;
     miqService.sparkleOff();
   }
 
-  function onError(response) {
-    var url = '/flavor/show_list';
-    var message = __('Unable to add Flavor ') + vm.flavorModel.name + ' .' + response.results[0].message;
-    miqService.redirectBack(message, 'error', url);
-    miqService.sparkleOff();
-  }
+  var getRepositoryFormData = function(response) {
+    var data = response;
+    if ( data.hasOwnProperty( 'href' ) ) {
+      delete data.href;
+    }
+    Object.assign(vm.repositoryModel, data);
+    setForm();
+  };
 
-  function nonError() {
-    var url = '/flavor/show_list';
-    var message = sprintf(__('Add of Flavor \"%s\" was successfully initialized.'), vm.flavorModel.name);
-    miqService.redirectBack(message, 'success', url);
-  }
-
-  var getBack = function(response) {
-    var err = false;
+  vm.getBack = function(response) {
+    var message = '';
+    var error = false;
     if (response.hasOwnProperty('results')) {
-      err = ! response.results[0].success;
+      error = ! response.results[0].success;
+      if (error) {
+        message = __('Unable to add Repository ') +  vm.repositoryModel.name + ' .' +  response.results[0].message;
+      } else {
+        message = sprintf(__('Add of Repository \"%s\" was successfully initiated.'), vm.repositoryModel.name);
+      }
+    } else {
+      error = ! response.success;
+      if (error) {
+        message = __('Unable to edit Repository') +  vm.repositoryModel.name + ' .' +  response.message;
+      } else {
+        message = sprintf(__('Edit of Repository \"%s\" was successfully initiated.'), vm.repositoryModel.name);
+      }
     }
 
-    if (err) {
-      onError(response);
+    var url = '/ansible_repository/show_list';
+    if (error) {
+      miqService.miqFlash('error', message);
+      miqService.sparkleOff();
     } else {
-      nonError();
+      miqFlashLater({ message: message });
+      window.location.href = url;
     }
   };
 
-  function getEmsFormDataComplete(response) {
-    vm.ems_list = response.data.ems_list;
-    if (foundEms()) {
-      setEms();
+  var getCredentials = function(response) {
+    response.resources.forEach( function(resource) {
+      vm.scm_credentials.push({name: resource.name, value: resource.id});
+    });
+  };
+
+  var getManagerResource = function(response) {
+    if (!response.resources.length) {
+      miqService.miqFlash('error', __('Embedded Ansible Provider not found.'));
+    } else {
+      vm.repositoryModel.manager_resource = {'href': response.resources[0].href};
     }
-  }
+    setForm();
+  };
 
-  function foundEms() {
-    return vm.ems_list.length > 0;
-  }
-
-  function setEms() {
-    vm.flavorModel.ems = vm.ems_list[0];
-  }
   vm.$onInit = init;
-};
+}

@@ -91,5 +91,6 @@ ManageIQ.angular.app.controller('flavorFormController', ['$http', 'flavorId', 'm
   }
 
   init();
+
 }]);
 

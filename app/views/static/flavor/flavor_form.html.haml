@@ -1,6 +1,7 @@
 %br
+  <h1>dalsi </h1>
 .form-horizontal
-  %form#form_div{:name           => "angularForm",           
+  %form#form_div{:name           => "angularForm",
                  'ng-show'       => "vm.afterGet",
                  'ng-cloak'      => '',
                  "miq-form"      => true,
@@ -14,6 +15,7 @@
       %label.col-md-2.control-label
         = _('Provider')
       .col-md-8
+
         = select_tag('ems_id',
                 '',
                 'ng-model'                   => 'vm.flavorModel.ems',
@@ -35,7 +37,6 @@
                             :required    => ""}
         %span.help-block{"ng-show" => "angularForm.name.$error.required"}
           = _("Required")
-
     .form-group{"ng-class" => "{'has-error': angularForm.ram.$error.isInt || angularForm.ram.$error.greaterThanZero}"}
       %label.col-md-2.control-label
         = _('Ram size in MB')
@@ -53,7 +54,6 @@
           = _("Ram must be integer")
         %span.help-block{"ng-show" => "angularForm.ram.$error.greaterThanZero"}
           = _("Ram must be greater than 0")
-
     .form-group{"ng-class" => "{'has-error': angularForm.vcpus.$error.isInt || angularForm.vcpus.$error.greaterThanZero}"}
       %label.col-md-2.control-label
         = _('VCPUs')
@@ -71,7 +71,6 @@
           = _("VCPUs must be integer")
         %span.help-block{"ng-show" => "angularForm.vcpus.$error.greaterThanZero"}
           = _("VCPUs must be greater than 0")
-
     .form-group{"ng-class" => "{'has-error': angularForm.disk.$error.isInt || angularForm.disk.$error.greaterThanZero}"}
       %label.col-md-2.control-label
         = _('Disk size in GB')
@@ -89,7 +88,6 @@
           = _("Disk size must be integer")
         %span.help-block{"ng-show" => "angularForm.disk.$error.greaterThanZero"}
           = _("Disk size must be greater than 0")
-
     .form-group{"ng-class" => "{'has-error': angularForm.swap.$error.intGreaterOrZero || angularForm.swap.$error.greaterOrZero}"}
       %label.col-md-2.control-label
         = _('Swap size in MB')
@@ -107,7 +105,6 @@
           = _("Swap size must be integer")
         %span.help-block{"ng-show" => "angularForm.swap.$error.greaterOrZero"}
           = _("Swap size must be greater or equal to 0")
-
     .form-group{"ng-class" => "{'has-error': angularForm.rxtx_factor.$error.isFloat || angularForm.rxtx_factor.$error.greaterOrZero}"}
       %label.col-md-2.control-label
         = _('RXTX factor')
@@ -115,7 +112,7 @@
         %input.form-control{:type             => "text",
                             :name             => "rxtx_factor",
                             "id"              => "rxtx_factor",
-                            'nageIQ.angluar.app.value('live_migrate_items',#{@live_migrate_items.to_json})ng-model'        => "vm.flavorModel.rxtx_factor",
+                            'ng-model'        => "vm.flavorModel.rxtx_factor",
                             :required         => "",
                             "is-float"        => true,
                             "greater-or-zero" => true}
@@ -135,6 +132,4 @@
                             :name         => "is_public",
                             'ng-model'    => "vm.flavorModel.is_public",
                             :checkchange  => true}
-
     = render :partial => 'layouts/angular/generic_form_buttons'
-
